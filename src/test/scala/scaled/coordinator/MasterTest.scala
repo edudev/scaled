@@ -32,7 +32,6 @@ class MasterSpec(_system: ActorSystem)
   var vnodeMaster: ActorRef = _
 
   before {
-
     vnodeMaster = system.actorOf(VNodeMaster.props(CounterVNode.builder)(MurmurHash3.stringHashing))
   }
 
