@@ -14,7 +14,7 @@ import scaled.vnode.{ Actor => VNodeActor }
 
 import scaled.samples.CounterVNode
 
-class ActorSpec(_system: ActorSystem)
+class MasterSpec(_system: ActorSystem)
   extends TestKit(_system)
   with Matchers
   with WordSpecLike
@@ -22,7 +22,7 @@ class ActorSpec(_system: ActorSystem)
   with BeforeAndAfterAll {
 
   def this() = {
-    this(ActorSystem("ActorSpec"))
+    this(ActorSystem("MasterSpec"))
   }
 
   override def afterAll: Unit = {
@@ -42,38 +42,24 @@ class ActorSpec(_system: ActorSystem)
 
   import Actor.CoordinatorReply
 
-  "A VNode Coordinator" should {
+  "A VNode Coordinator Master" should {
     import VNodeMaster.LookupReply
     import VNodeActor.$CommandReply
     import CounterVNode._
 
-    "forward commands" in {
+    "create coordinators, which forward commands" in {
       val probe = TestProbe()
 
       VNodeMaster.lookup(vnodeMaster, "key 1")(probe.ref)
       val key1vnode = probe.expectMsgType[LookupReply].vnode
 
-      VNodeMaster.lookup(vnodeMaster, "key 2")(probe.ref)
-      val key2vnode = probe.expectMsgType[LookupReply].vnode
-
-      VNodeActor.command(key1vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(0))
-
-      VNodeActor.command(key2vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(0))
-
       VNodeActor.command(key1vnode, Set(130))(probe.ref)
       probe.expectMsg($CommandReply(0))
 
-      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, "key 1", Get))
+      val coordinatorMaster = system.actorOf(Master.props(vnodeMaster))
 
+      Master.command(coordinatorMaster, "key 1", Get)(probe.ref)
       probe.expectMsg(CoordinatorReply(130))
-
-      VNodeActor.command(key1vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(130))
-
-      VNodeActor.command(key2vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(0))
     }
   }
 }
