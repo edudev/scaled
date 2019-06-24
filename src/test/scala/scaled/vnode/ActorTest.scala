@@ -8,32 +8,9 @@ import akka.testkit.{ TestKit, TestProbe }
 import akka.util.Timeout
 import akka.pattern.ask
 
-
-object CounterVNode {
-  sealed trait Command
-  case object Get extends Command
-  case object Increment extends Command
-  case object Clear extends Command
-  case class Set(value: Int) extends Command
-
-  def apply: CounterVNode = new CounterVNode
-}
-
+import scaled.samples.CounterVNode
 import CounterVNode._
 
-class CounterVNode extends VNode[Command, Int] {
-  def init = 0
-  def handle_command(sender: Sender, command: Command, counter: Int) =
-    command match {
-      case Get => CommandReply(counter, counter)
-      case Increment => CommandReply(counter, counter + 1)
-      case Clear => CommandNoReply(this.init)
-      case Set(value) => {
-        sender.send(counter)
-        CommandNoReply(value)
-      }
-    }
-}
 
 class ActorSpec(_system: ActorSystem)
   extends TestKit(_system)
@@ -46,6 +23,8 @@ class ActorSpec(_system: ActorSystem)
   override def afterAll: Unit = {
     shutdown(system)
   }
+
+  import Actor.$CommandReply
 
   "A VNode Actor" should {
     "call init" in {
@@ -78,45 +57,45 @@ class ActorSpec(_system: ActorSystem)
     }
 
     "be able to reply" in {
-      val vnode = system.actorOf(Actor.props(CounterVNode.apply))
+      val vnode = system.actorOf(Actor.props(new CounterVNode))
       val probe = TestProbe()
 
       Actor.command(vnode, Get)(probe.ref)
-      probe.expectMsg(0)
+      probe.expectMsg($CommandReply(0))
     }
 
     "be able to change its state and reply" in {
-      val vnode = system.actorOf(Actor.props(CounterVNode.apply))
+      val vnode = system.actorOf(Actor.props(new CounterVNode))
       val probe = TestProbe()
 
       Actor.command(vnode, Increment)(probe.ref)
-      probe.expectMsg(0)
+      probe.expectMsg($CommandReply(0))
       Actor.command(vnode, Get)(probe.ref)
-      probe.expectMsg(1)
+      probe.expectMsg($CommandReply(1))
     }
 
     "be able to change its state without replying" in {
-      val vnode = system.actorOf(Actor.props(CounterVNode.apply))
+      val vnode = system.actorOf(Actor.props(new CounterVNode))
       val probe = TestProbe()
 
       Actor.command(vnode, Increment)(probe.ref)
-      probe.expectMsg(0)
+      probe.expectMsg($CommandReply(0))
 
       Actor.command(vnode, Clear)(probe.ref)
       probe.expectNoMsg(100.millis)
 
       Actor.command(vnode, Get)(probe.ref)
-      probe.expectMsg(0)
+      probe.expectMsg($CommandReply(0))
     }
 
     "be able to change its state and reply, separetely" in {
-      val vnode = system.actorOf(Actor.props(CounterVNode.apply))
+      val vnode = system.actorOf(Actor.props(new CounterVNode))
       val probe = TestProbe()
 
       Actor.command(vnode, Set(10))(probe.ref)
-      probe.expectMsg(0)
+      probe.expectMsg($CommandReply(0))
       Actor.command(vnode, Get)(probe.ref)
-      probe.expectMsg(10)
+      probe.expectMsg($CommandReply(10))
     }
   }
 }

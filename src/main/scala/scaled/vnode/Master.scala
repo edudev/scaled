@@ -10,8 +10,11 @@ object Master {
 
   def props[Key, Command, State](builder: Builder[Command, State])(implicit hashing: Hashing[Key]): Props = Props(new Master(builder)(hashing))
 
+  def lookup[Key](master: ActorRef, key: Key)(implicit sender: ActorRef): Unit =
+    master.tell(Lookup(key), sender)
+
   final case class Lookup[Key](key: Key)
-  final case class LookupResult(vnode: ActorRef)
+  final case class LookupReply(vnode: ActorRef)
 }
 
 class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Hashing[Key]) extends AkkaActor with ActorLogging {
@@ -28,7 +31,7 @@ class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Has
       val index: Int = consistentHash(l.key)
       val vnode = indexToVNode(index)
 
-      this.sender ! LookupResult(vnode)
+      this.sender ! LookupReply(vnode)
     }
   }
 

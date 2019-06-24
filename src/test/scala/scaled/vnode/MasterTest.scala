@@ -62,13 +62,13 @@ class MasterSpec(_system: ActorSystem)
 
       val probe = TestProbe()
 
-      master.tell(Lookup("key 1"), probe.ref)
-      val key1vnode = probe.expectMsgType[LookupResult]
+      Master.lookup(master, "key 1")(probe.ref)
+      val key1vnode = probe.expectMsgType[LookupReply]
 
-      master.tell(Lookup("key 2"), probe.ref)
-      val key2vnode = probe.expectMsgType[LookupResult]
+      Master.lookup(master, "key 2")(probe.ref)
+      val key2vnode = probe.expectMsgType[LookupReply]
 
-      key1vnode === key2vnode shouldBe false
+      key1vnode.vnode === key2vnode.vnode shouldBe false
     }
   }
 }

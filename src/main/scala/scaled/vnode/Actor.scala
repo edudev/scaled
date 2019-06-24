@@ -6,6 +6,7 @@ object Actor {
   def props[Command, State](vnode: VNode[Command, State]): Props = Props(new Actor(vnode))
 
   final case class $Command[Command](command: Command)
+  final case class $CommandReply(reply: Any)
 
   def command[Command](vnode: ActorRef, command: Command)(implicit sender: ActorRef) = vnode ! $Command(command)
 }
