@@ -43,4 +43,3 @@ class Actor[Command, State](vnode: VNode[Command, State]) extends AkkaActor with
     }
   }
 }
-
