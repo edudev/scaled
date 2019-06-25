@@ -31,10 +31,10 @@ class ClusterSpec(system: ActorSystem)
 
     val cluster = Cluster(CounterVNode.spec)(system)
 
-    cluster.command("key 1", Set(130), MajorityCoordinator)(5.seconds) flatMap { result =>
+    cluster.command("key 1", Set(130), new MajorityCoordinator(CounterVNode.spec.replicationFactor))(5.seconds) flatMap { result =>
       result shouldEqual 0
 
-      cluster.command("key 1", Get, MajorityCoordinator)(5.seconds) map { result =>
+      cluster.command("key 1", Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor))(5.seconds) map { result =>
         result shouldEqual 130
       }
     }

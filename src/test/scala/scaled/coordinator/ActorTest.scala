@@ -70,7 +70,7 @@ class ActorSpec(_system: ActorSystem)
         probe.expectMsg($CommandReply(0))
       })
 
-      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, "key 1", Get, MajorityCoordinator))
+      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, "key 1", Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor)))
 
       probe.watch(coordinator)
       probe.expectMsg(CoordinatorReply(130))
@@ -100,7 +100,7 @@ class ActorSpec(_system: ActorSystem)
       probe.expectMsg($CommandReply(0))
       probe.expectMsg($CommandReply(0))
 
-      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, "key 1", Get, MajorityCoordinator))
+      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, "key 1", Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor)))
 
       probe.watch(coordinator)
       probe.expectMsg(CoordinatorReply(130))

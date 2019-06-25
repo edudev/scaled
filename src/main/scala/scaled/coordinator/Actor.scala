@@ -36,18 +36,21 @@ class Actor[Key, Command, Acc](origin: ActorRef, vnodeMaster: ActorRef, key: Key
     case VNodeActor.$CommandReply(reply) => {
       val vnode = this.sender()
       val waitingAnswers = waitingAnswers0 - vnode
-      val acc = this.coordinator.accumulate(acc0, reply)
 
-      if (waitingAnswers.isEmpty)
-        this.finish(acc)
-      else
-        this.context.become(this.waiting(acc, waitingAnswers))
+      this.coordinator.accumulate(acc0, reply) match {
+        case AccumulateReply(result) =>
+          this.finish(result)
+        case AccumulateContinue(acc) =>
+          if (waitingAnswers.isEmpty)
+            this.finish(this.coordinator.finish(acc))
+          else
+            this.context.become(this.waiting(acc, waitingAnswers))
+      }
     }
   }
 
-  private def finish(acc: Acc): Unit = {
-    val reply = this.coordinator.finish(acc)
-    this.origin ! CoordinatorReply(reply)
+  private def finish(result: Any): Unit = {
+    this.origin ! CoordinatorReply(result)
     this.context.stop(this.self)
   }
 }
