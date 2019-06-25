@@ -1,6 +1,5 @@
 package scaled
 
-import scala.util.hashing.MurmurHash3
 import scala.concurrent.duration._
 
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, WordSpecLike, Matchers }
@@ -36,7 +35,7 @@ class MasterSpec(_system: ActorSystem)
     import CounterVNode._
 
     "create a vnode master and a coordinator master, and forward commands" in {
-      val master = system.actorOf(Master.props(CounterVNode.builder)(MurmurHash3.stringHashing))
+      val master = system.actorOf(Master.props(CounterVNode.spec))
 
       val probe = TestProbe()
 

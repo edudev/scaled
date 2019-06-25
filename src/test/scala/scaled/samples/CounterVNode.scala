@@ -1,10 +1,13 @@
 package scaled.samples
 
+import scala.util.hashing.MurmurHash3
+
 import scaled.vnode.VNode
-import scaled.vnode.Builder
 import scaled.vnode.Sender
 import scaled.vnode.CommandReply
 import scaled.vnode.CommandNoReply
+
+import scaled.Spec
 
 import scaled.coordinator.Coordinator
 
@@ -16,9 +19,10 @@ object CounterVNode {
   case object Clear extends Command
   case class Set(value: Int) extends Command
 
-  val builder = new Builder[Command, Int] {
-    def build = new CounterVNode
+  val spec = new Spec[String, Command, Int] {
     val replicationFactor: Int = 3
+    def build = new CounterVNode
+    val hashing = MurmurHash3.stringHashing
   }
 }
 

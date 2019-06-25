@@ -1,6 +1,5 @@
 package scaled.coordinator
 
-import scala.util.hashing.MurmurHash3
 import scala.concurrent.duration._
 
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, WordSpecLike, Matchers }
@@ -33,7 +32,7 @@ class ActorSpec(_system: ActorSystem)
 
   before {
 
-    vnodeMaster = system.actorOf(VNodeMaster.props(CounterVNode.builder)(MurmurHash3.stringHashing))
+    vnodeMaster = system.actorOf(VNodeMaster.props(CounterVNode.spec))
   }
 
   after {

@@ -25,7 +25,7 @@ class MasterSpec(_system: ActorSystem)
 
   "A VNode Master" should {
     "start children" in {
-      val master = system.actorOf(Master.props(DummyVNode.builder)(MurmurHash3.stringHashing))
+      val master = system.actorOf(Master.props(DummyVNode.spec))
 
       val probe = TestProbe()
       system.actorSelection(master.path / "*").tell(Identify(420), probe.ref)
@@ -40,7 +40,7 @@ class MasterSpec(_system: ActorSystem)
     "lookup children" in {
       import Master._
 
-      val master = system.actorOf(Master.props(DummyVNode.builder)(MurmurHash3.stringHashing))
+      val master = system.actorOf(Master.props(DummyVNode.spec))
 
       val probe = TestProbe()
 

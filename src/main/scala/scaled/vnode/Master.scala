@@ -1,14 +1,15 @@
 package scaled.vnode
 
 import Math.abs
-import scala.util.hashing.Hashing
 
 import akka.actor.{ Actor => AkkaActor, ActorRef, Props, ActorLogging }
+
+import scaled.Spec
 
 object Master {
   val VNodeCount: Int = 64
 
-  def props[Key, Command, State](builder: Builder[Command, State])(implicit hashing: Hashing[Key]): Props = Props(new Master(builder)(hashing))
+  def props[Key, Command, State](spec: Spec[Key, Command, State]): Props = Props(new Master(spec))
 
   def lookup[Key](master: ActorRef, key: Key)(implicit sender: ActorRef): Unit =
     master.tell(Lookup(key), sender)
@@ -17,10 +18,10 @@ object Master {
   final case class LookupReply(vnodes: Seq[ActorRef])
 }
 
-class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Hashing[Key]) extends AkkaActor with ActorLogging {
+class Master[Key, Command, State](spec: Spec[Key, Command, State]) extends AkkaActor with ActorLogging {
   import Master._
 
-  val replicationFactor = builder.replicationFactor
+  val replicationFactor = spec.replicationFactor
 
   override def preStart: Unit = {
     val indexToVNode = (1 to Master.VNodeCount).map(i => i -> buildVNode(i)).toMap
@@ -40,9 +41,9 @@ class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Has
   }
 
   private def buildVNode(index: Int): ActorRef =
-    this.context.actorOf(Actor.props(builder.build), f"vnode-${index}%04d")
+    this.context.actorOf(Actor.props(spec.build), f"vnode-${index}%04d")
 
-  private def consistentHash(key: Key): Int = wrap(abs(hashing.hash(key)))
+  private def consistentHash(key: Key): Int = wrap(abs(spec.hashing.hash(key)))
 
   private def wrap(index: Int): Int = index % Master.VNodeCount
 

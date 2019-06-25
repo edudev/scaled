@@ -1,6 +1,5 @@
 package scaled
 
-import scala.util.hashing.MurmurHash3
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
@@ -30,7 +29,7 @@ class ClusterSpec(system: ActorSystem)
   "A Cluster" should "be ready for commands" in {
     import CounterVNode._
 
-    val cluster = Cluster(CounterVNode.builder)(MurmurHash3.stringHashing, system)
+    val cluster = Cluster(CounterVNode.spec)(system)
 
     cluster.command("key 1", Set(130), MajorityCoordinator)(5.seconds) flatMap { result =>
       result shouldEqual 0
