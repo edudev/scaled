@@ -40,6 +40,7 @@ class ActorSpec(_system: ActorSystem)
   }
 
   import Actor.CoordinatorReply
+  import Actor.CoordinatorNoReply
 
   "A VNode Coordinator" should {
     import VNodeMaster.LookupReply
@@ -104,6 +105,30 @@ class ActorSpec(_system: ActorSystem)
 
       probe.watch(coordinator)
       probe.expectMsg(CoordinatorReply(130))
+      probe.expectTerminated(coordinator)
+    }
+
+    "not wait for dead vnodes" in {
+      val probe = TestProbe()
+
+      VNodeMaster.lookup(vnodeMaster, "key 1")(probe.ref)
+      val key1vnodes = probe.expectMsgType[LookupReply].vnodes
+
+      VNodeActor.command(key1vnodes(0), Set(100))(probe.ref)
+      VNodeActor.command(key1vnodes(1), Set(100))(probe.ref)
+      VNodeActor.command(key1vnodes(2), Set(100))(probe.ref)
+      probe.expectMsg($CommandReply(0))
+      probe.expectMsg($CommandReply(0))
+      probe.expectMsg($CommandReply(0))
+
+      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, Some("key 1"), Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor)))
+
+      key1vnodes(0) ! PoisonPill
+      key1vnodes(1) ! PoisonPill
+      key1vnodes(2) ! PoisonPill
+
+      probe.watch(coordinator)
+      probe.expectMsg(200.millis, CoordinatorNoReply)
       probe.expectTerminated(coordinator)
     }
   }

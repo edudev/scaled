@@ -31,7 +31,7 @@ object KvVNode {
       val replySet: Set[String] = reply.asInstanceOf[Set[String]]
       AccumulateContinue(acc0 ++ replySet)
     }
-    def finish(acc: Set[String]) = acc
+    def finish(acc: Set[String]) = Some(acc)
   }
 }
 
