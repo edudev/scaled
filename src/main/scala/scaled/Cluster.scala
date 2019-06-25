@@ -6,6 +6,7 @@ import scala.concurrent.duration.FiniteDuration
 
 import akka.actor.ActorSystem
 import akka.actor.ActorRef
+import akka.actor.PoisonPill
 import akka.util.Timeout
 import akka.pattern.ask
 
@@ -21,6 +22,8 @@ class Cluster[Key, Command, State] private (master: ActorRef) {
   private def this(spec: Spec[Key, Command, State])(system: ActorSystem) =
     this(system.actorOf(Master.props(spec)))
 
-  def command[Acc](key: Key, command: Command, coordinator: Coordinator[Acc])(timeout: FiniteDuration): Future[Any] =
+  def stop = master ! PoisonPill
+
+  def command[Acc](key: Key, command: Command, coordinator: Coordinator[Acc])(implicit timeout: FiniteDuration): Future[Any] =
     ask(master, Master.CommandM(key, command, coordinator))(Timeout(timeout)).mapTo[CoordinatorReply].map(_.reply)(parasitic)
 }

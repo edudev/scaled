@@ -24,19 +24,15 @@ class ClusterSpec(system: ActorSystem)
     Await.result(system.terminate, 1.minute)
   }
 
-  import scaled.coordinator.Actor.CoordinatorReply
-
   "A Cluster" should "be ready for commands" in {
     import CounterVNode._
 
     val cluster = Cluster(CounterVNode.spec)(system)
 
-    cluster.command("key 1", Set(130), new MajorityCoordinator(CounterVNode.spec.replicationFactor))(5.seconds) flatMap { result =>
+    cluster.command("key 1", Set(130), new MajorityCoordinator(CounterVNode.spec.replicationFactor))(5.seconds) map { result =>
       result shouldEqual 0
-
-      cluster.command("key 1", Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor))(5.seconds) map { result =>
-        result shouldEqual 130
-      }
-    }
+    } flatMap(_ => cluster.command("key 1", Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor))(5.seconds) map { result =>
+      result shouldEqual 130
+    })
   }
 }
