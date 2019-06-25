@@ -14,33 +14,41 @@ object Actor {
 class Actor[Command, State](vnode: VNode[Command, State]) extends AkkaActor with ActorLogging {
   import Actor._
 
+  // needed only for the terminate callback...
   var state: State = _
 
   override def preStart: Unit = {
-    this.state = this.vnode.init
+    val state = this.vnode.init
+    this.context.become(this.setState(state))
   }
 
   override def postStop: Unit = {
     this.vnode.terminate(this.state)
   }
 
-  override def receive = {
-    // abstract type pattern Command is unchecked since it is eliminated by erasure
-    //case $Command(command: Command) => {
+  override def receive: Receive = AkkaActor.emptyBehavior
 
-    case c: $Command[Command] => {
-      val command = c.command
-      val sender = Sender(this.sender, this.self)
+  private def setState(state: State): Receive = {
+    this.state = state
 
-      this.vnode.handle_command(sender, command, this.state) match {
-        case CommandReply(reply, newState) => {
-          this.state = newState
-          sender.send(reply)
-        }
-        case CommandNoReply(newState) => {
-          this.state = newState
-        }
-      }
+    {
+      // abstract type pattern Command is unchecked since it is eliminated by erasure
+      //case $Command(command: Command) => {
+
+      case c: $Command[Command] =>
+        val newState = this.doHandleCommand(Sender(this.sender, this.self), c.command, state)
+        this.context.become(this.setState(newState))
     }
   }
+
+  private def doHandleCommand(sender: Sender, command: Command, state: State): State =
+    this.vnode.handleCommand(sender, command, state) match {
+      case CommandReply(reply, newState) => {
+        sender.send(reply)
+        newState
+      }
+
+      case CommandNoReply(newState) =>
+        newState
+    }
 }

@@ -22,13 +22,14 @@ class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Has
 
   val replicationFactor = builder.replicationFactor
 
-  var indexToVNode: Map[Int, ActorRef] = _
-
   override def preStart: Unit = {
-    this.indexToVNode = (1 to Master.VNodeCount).map(i => i -> buildVNode(i)).toMap
+    val indexToVNode = (1 to Master.VNodeCount).map(i => i -> buildVNode(i)).toMap
+    this.context.become(this.initialized(indexToVNode))
   }
 
-  override def receive = {
+  override def receive: Receive = AkkaActor.emptyBehavior
+
+  private def initialized(indexToVNode: Map[Int, ActorRef]): Receive = {
     case l: Lookup[Key] => {
       val mainIndex: Int = consistentHash(l.key)
       val allIndices: Seq[Int] = getAllIndices(mainIndex)

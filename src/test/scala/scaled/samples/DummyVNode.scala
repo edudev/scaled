@@ -15,5 +15,5 @@ object DummyVNode {
 
 class DummyVNode extends VNode[Nothing, Unit] {
   def init = ()
-  def handle_command(sender: Sender, command: Nothing, counter: Unit) = ???
+  def handleCommand(sender: Sender, command: Nothing, counter: Unit) = ???
 }

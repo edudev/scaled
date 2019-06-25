@@ -26,7 +26,7 @@ import CounterVNode._
 
 class CounterVNode extends VNode[Command, Int] {
   def init = 0
-  def handle_command(sender: Sender, command: Command, counter: Int) =
+  def handleCommand(sender: Sender, command: Command, counter: Int) =
     command match {
       case Get => CommandReply(counter, counter)
       case Increment => CommandReply(counter, counter + 1)
