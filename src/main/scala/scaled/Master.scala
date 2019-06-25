@@ -21,9 +21,9 @@ class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Has
   import Master._
 
   override def preStart: Unit = {
-    val vnodeMaster = this.context.actorOf(VNodeMaster.props(builder)(hashing))
+    val vnodeMaster = this.context.actorOf(VNodeMaster.props(builder)(hashing), "vnodeMaster")
 
-    val coordinatorMaster = this.context.actorOf(CoordinatorMaster.props(vnodeMaster))
+    val coordinatorMaster = this.context.actorOf(CoordinatorMaster.props(vnodeMaster), "coordinatorMaster")
 
     this.context.become(this.initialized(vnodeMaster, coordinatorMaster))
   }

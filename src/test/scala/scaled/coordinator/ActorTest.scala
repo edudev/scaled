@@ -51,29 +51,41 @@ class ActorSpec(_system: ActorSystem)
       val probe = TestProbe()
 
       VNodeMaster.lookup(vnodeMaster, "key 1")(probe.ref)
-      val key1vnode = probe.expectMsgType[LookupReply].vnode
+      val key1vnodes = probe.expectMsgType[LookupReply].vnodes
 
       VNodeMaster.lookup(vnodeMaster, "key 2")(probe.ref)
-      val key2vnode = probe.expectMsgType[LookupReply].vnode
+      val key2vnodes = probe.expectMsgType[LookupReply].vnodes
 
-      VNodeActor.command(key1vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(0))
+      key1vnodes.foreach(vnode => {
+        VNodeActor.command(vnode, Get)(probe.ref)
+        probe.expectMsg($CommandReply(0))
+      })
 
-      VNodeActor.command(key2vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(0))
+      key2vnodes.foreach(vnode => {
+        VNodeActor.command(vnode, Get)(probe.ref)
+        probe.expectMsg($CommandReply(0))
+      })
 
-      VNodeActor.command(key1vnode, Set(130))(probe.ref)
-      probe.expectMsg($CommandReply(0))
+      key1vnodes.foreach(vnode => {
+        VNodeActor.command(vnode, Set(130))(probe.ref)
+        probe.expectMsg($CommandReply(0))
+      })
 
       val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, "key 1", Get))
 
+      probe.watch(coordinator)
       probe.expectMsg(CoordinatorReply(130))
+      probe.expectTerminated(coordinator)
 
-      VNodeActor.command(key1vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(130))
+      key1vnodes.foreach(vnode => {
+        VNodeActor.command(vnode, Get)(probe.ref)
+        probe.expectMsg($CommandReply(130))
+      })
 
-      VNodeActor.command(key2vnode, Get)(probe.ref)
-      probe.expectMsg($CommandReply(0))
+      key2vnodes.foreach(vnode => {
+        VNodeActor.command(vnode, Get)(probe.ref)
+        probe.expectMsg($CommandReply(0))
+      })
     }
   }
 }

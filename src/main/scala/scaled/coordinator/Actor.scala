@@ -22,17 +22,17 @@ class Actor[Key, Command](origin: ActorRef, vnodeMaster: ActorRef, key: Key, com
   }
 
   override def receive = {
-    case VNodeMaster.LookupReply(vnode: ActorRef) => {
-      this.execute(vnode)
+    case VNodeMaster.LookupReply(vnodes: Seq[ActorRef]) => {
+      this.execute(vnodes)
     }
   }
 
-  private def execute(vnode: ActorRef): Unit = {
-    VNodeActor.command(vnode, command)(this.self)
-    this.context.become(this.waiting(vnode))
+  private def execute(vnodes: Seq[ActorRef]): Unit = {
+    vnodes.foreach(VNodeActor.command(_, command)(this.self))
+    this.context.become(this.waiting(vnodes))
   }
 
-  private def waiting(vnode: ActorRef): Receive = {
+  private def waiting(vnodes: Seq[ActorRef]): Receive = {
     case VNodeActor.$CommandReply(reply) => {
       this.finish(reply)
     }
@@ -40,5 +40,6 @@ class Actor[Key, Command](origin: ActorRef, vnodeMaster: ActorRef, key: Key, com
 
   private def finish(reply: Any): Unit = {
     this.origin ! CoordinatorReply(reply)
+    this.context.stop(this.self)
   }
 }

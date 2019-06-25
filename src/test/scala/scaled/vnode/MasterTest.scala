@@ -9,17 +9,7 @@ import akka.testkit.{ TestKit, TestProbe }
 import akka.util.Timeout
 import akka.pattern.ask
 
-
-object DummyVNode {
-  def apply: DummyVNode = new DummyVNode
-}
-
-import DummyVNode._
-
-class DummyVNode extends VNode[Nothing, Unit] {
-  def init = ()
-  def handle_command(sender: Sender, command: Nothing, counter: Unit) = ???
-}
+import scaled.samples.DummyVNode
 
 class MasterSpec(_system: ActorSystem)
   extends TestKit(_system)
@@ -35,11 +25,7 @@ class MasterSpec(_system: ActorSystem)
 
   "A VNode Master" should {
     "start children" in {
-      val builder: Builder[Nothing, Unit] = new Builder[Nothing, Unit] {
-        def build = DummyVNode.apply
-      }
-
-      val master = system.actorOf(Master.props(builder)(MurmurHash3.stringHashing))
+      val master = system.actorOf(Master.props(DummyVNode.builder)(MurmurHash3.stringHashing))
 
       val probe = TestProbe()
       system.actorSelection(master.path / "*").tell(Identify(420), probe.ref)
@@ -54,11 +40,7 @@ class MasterSpec(_system: ActorSystem)
     "lookup children" in {
       import Master._
 
-      val builder: Builder[Nothing, Unit] = new Builder[Nothing, Unit] {
-        def build = DummyVNode.apply
-      }
-
-      val master = system.actorOf(Master.props(builder)(MurmurHash3.stringHashing))
+      val master = system.actorOf(Master.props(DummyVNode.builder)(MurmurHash3.stringHashing))
 
       val probe = TestProbe()
 
@@ -68,7 +50,7 @@ class MasterSpec(_system: ActorSystem)
       Master.lookup(master, "key 2")(probe.ref)
       val key2vnode = probe.expectMsgType[LookupReply]
 
-      key1vnode.vnode === key2vnode.vnode shouldBe false
+      key1vnode.vnodes === key2vnode.vnodes shouldBe false
     }
   }
 }

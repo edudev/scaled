@@ -16,6 +16,7 @@ object CounterVNode {
 
   val builder = new Builder[Command, Int] {
     def build = new CounterVNode
+    val replicationFactor: Int = 3
   }
 }
 

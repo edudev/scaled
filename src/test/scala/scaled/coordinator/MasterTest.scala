@@ -50,10 +50,12 @@ class MasterSpec(_system: ActorSystem)
       val probe = TestProbe()
 
       VNodeMaster.lookup(vnodeMaster, "key 1")(probe.ref)
-      val key1vnode = probe.expectMsgType[LookupReply].vnode
+      val key1vnodes = probe.expectMsgType[LookupReply].vnodes
 
-      VNodeActor.command(key1vnode, Set(130))(probe.ref)
-      probe.expectMsg($CommandReply(0))
+      key1vnodes.foreach(vnode => {
+        VNodeActor.command(vnode, Set(130))(probe.ref)
+        probe.expectMsg($CommandReply(0))
+      })
 
       val coordinatorMaster = system.actorOf(Master.props(vnodeMaster))
 
