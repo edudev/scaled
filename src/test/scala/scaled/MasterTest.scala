@@ -39,10 +39,10 @@ class MasterSpec(_system: ActorSystem)
 
       val probe = TestProbe()
 
-      Master.command(master, "key 1", Set(130), new MajorityCoordinator(CounterVNode.spec.replicationFactor))(probe.ref)
+      Master.command(master, "key 1", Set(130), new MajorityCoordinator(CounterVNode.spec.replicationFactor))(probe.ref, 500.millis)
       probe.expectMsg(CoordinatorReply(0))
 
-      Master.command(master, "key 1", Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor))(probe.ref)
+      Master.command(master, "key 1", Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor))(probe.ref, 500.millis)
       probe.expectMsg(CoordinatorReply(130))
     }
   }

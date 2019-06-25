@@ -39,11 +39,14 @@ class ActorSpec(_system: ActorSystem)
     vnodeMaster ! PoisonPill
   }
 
+  val majorityCoordinator: Coordinator[List[Any]] = new MajorityCoordinator(CounterVNode.spec.replicationFactor)
+
   import Actor.CoordinatorReply
   import Actor.CoordinatorNoReply
 
   "A VNode Coordinator" should {
     import VNodeMaster.LookupReply
+    import VNodeMaster.Lookup
     import VNodeActor.$CommandReply
     import CounterVNode._
 
@@ -71,7 +74,7 @@ class ActorSpec(_system: ActorSystem)
         probe.expectMsg($CommandReply(0))
       })
 
-      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, Some("key 1"), Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor)))
+      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, Some("key 1"), Get, majorityCoordinator, 500.millis))
 
       probe.watch(coordinator)
       probe.expectMsg(CoordinatorReply(130))
@@ -101,7 +104,7 @@ class ActorSpec(_system: ActorSystem)
       probe.expectMsg($CommandReply(0))
       probe.expectMsg($CommandReply(0))
 
-      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, Some("key 1"), Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor)))
+      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, Some("key 1"), Get, majorityCoordinator, 500.millis))
 
       probe.watch(coordinator)
       probe.expectMsg(CoordinatorReply(130))
@@ -121,7 +124,7 @@ class ActorSpec(_system: ActorSystem)
       probe.expectMsg($CommandReply(0))
       probe.expectMsg($CommandReply(0))
 
-      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, Some("key 1"), Get, new MajorityCoordinator(CounterVNode.spec.replicationFactor)))
+      val coordinator = system.actorOf(Actor.props(probe.ref, vnodeMaster, Some("key 1"), Get, majorityCoordinator, 500.millis))
 
       key1vnodes(0) ! PoisonPill
       key1vnodes(1) ! PoisonPill
@@ -129,6 +132,17 @@ class ActorSpec(_system: ActorSystem)
 
       probe.watch(coordinator)
       probe.expectMsg(200.millis, CoordinatorNoReply)
+      probe.expectTerminated(coordinator)
+    }
+
+    "timeout on slow requests" in {
+      val probe = TestProbe()
+
+      val coordinator = system.actorOf(Actor.props(probe.ref, probe.ref, Some("key 1"), Get, majorityCoordinator, 200.millis))
+
+      probe.watch(coordinator)
+      probe.expectMsg(200.millis, Lookup("key 1"))
+      probe.expectMsg(500.millis, CoordinatorNoReply)
       probe.expectTerminated(coordinator)
     }
   }
