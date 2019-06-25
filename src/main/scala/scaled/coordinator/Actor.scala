@@ -5,12 +5,12 @@ import akka.actor.{ Actor => AkkaActor, ActorRef, Props, ActorLogging }
 import scaled.vnode.{ Master => VNodeMaster, Actor => VNodeActor }
 
 object Actor {
-  def props[Key, Command, Acc](origin: ActorRef, vnodeMaster: ActorRef, key: Key, command: Command, coordinator: Coordinator[Acc]): Props = Props(new Actor(origin, vnodeMaster, key, command, coordinator))
+  def props[Key, Command, Acc](origin: ActorRef, vnodeMaster: ActorRef, key: Option[Key], command: Command, coordinator: Coordinator[Acc]): Props = Props(new Actor(origin, vnodeMaster, key, command, coordinator))
 
   final case class CoordinatorReply(reply: Any)
 }
 
-class Actor[Key, Command, Acc](origin: ActorRef, vnodeMaster: ActorRef, key: Key, command: Command, coordinator: Coordinator[Acc]) extends AkkaActor with ActorLogging {
+class Actor[Key, Command, Acc](origin: ActorRef, vnodeMaster: ActorRef, key: Option[Key], command: Command, coordinator: Coordinator[Acc]) extends AkkaActor with ActorLogging {
   import Actor._
 
   override def preStart: Unit = {
@@ -18,7 +18,10 @@ class Actor[Key, Command, Acc](origin: ActorRef, vnodeMaster: ActorRef, key: Key
   }
 
   private def prepare: Unit = {
-    VNodeMaster.lookup(vnodeMaster, key)(this.self)
+    key match {
+      case Some(k) => VNodeMaster.lookup(vnodeMaster, k)(this.self)
+      case None => VNodeMaster.lookupAll(vnodeMaster)(this.self)
+    }
   }
 
   override def receive = {

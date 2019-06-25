@@ -7,6 +7,7 @@ import org.scalatest.{AsyncFlatSpec, Matchers, BeforeAndAfter, BeforeAndAfterAll
 
 import akka.actor.{ ActorSystem }
 
+import scaled.coordinator.Coordinator
 import scaled.coordinator.MajorityCoordinator
 
 import scaled.samples.KvVNode
@@ -35,7 +36,9 @@ class KvClusterSpec(system: ActorSystem)
     cluster.stop
   }
 
-  val majorityCoordinator = new MajorityCoordinator(KvVNode.spec.replicationFactor)
+  val majorityCoordinator: Coordinator[List[Any]] = new MajorityCoordinator(KvVNode.spec.replicationFactor)
+  val unionCoordinator: Coordinator[Set[String]] = KvVNode.unionCoordinator
+
   implicit val timeout: FiniteDuration = 5.seconds
   import KvVNode._
 
@@ -62,6 +65,32 @@ class KvClusterSpec(system: ActorSystem)
       result shouldEqual None
     } flatMap(_ => cluster.command("key 1", List, majorityCoordinator) map { result =>
       result shouldEqual Set("key 1")
+    })
+  }
+
+  it should "keys can go to separate vnodes" in {
+    val cluster = Cluster(KvVNode.spec[Int])(system)
+
+    cluster.command("key 1", Put("key 1", 10), majorityCoordinator) map { result =>
+      result shouldEqual None
+    } flatMap(_ => cluster.command("key 2", Put("key 2", 20), majorityCoordinator) map { result =>
+      result shouldEqual None
+    }) flatMap(_ => cluster.command("key 1", List, majorityCoordinator) map { result =>
+      result shouldEqual Set("key 1")
+    }) flatMap(_ => cluster.coverageCommand(List, unionCoordinator) map { result =>
+      result shouldEqual Set("key 1", "key 2")
+    })
+  }
+
+  it should "keys can go to the same vnodes" in {
+    val cluster = Cluster(KvVNode.spec[Int])(system)
+
+    cluster.command("key 10", Put("key 10", 10), majorityCoordinator) map { result =>
+      result shouldEqual None
+    } flatMap(_ => cluster.command("key 15", Put("key 15", 20), majorityCoordinator) map { result =>
+      result shouldEqual None
+    }) flatMap(_ => cluster.command("key 10", List, majorityCoordinator) map { result =>
+      result shouldEqual Set("key 10", "key 15")
     })
   }
 }

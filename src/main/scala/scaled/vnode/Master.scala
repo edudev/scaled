@@ -14,7 +14,11 @@ object Master {
   def lookup[Key](master: ActorRef, key: Key)(implicit sender: ActorRef): Unit =
     master.tell(Lookup(key), sender)
 
+  def lookupAll(master: ActorRef)(implicit sender: ActorRef): Unit =
+    master.tell(LookupAll, sender)
+
   final case class Lookup[Key](key: Key)
+  final case object LookupAll
   final case class LookupReply(vnodes: Seq[ActorRef])
 }
 
@@ -33,9 +37,13 @@ class Master[Key, Command, State](spec: Spec[Key, Command, State]) extends AkkaA
   private def initialized(indexToVNode: Map[Int, ActorRef]): Receive = {
     case l: Lookup[Key] => {
       val mainIndex: Int = consistentHash(l.key)
-      val allIndices: Seq[Int] = getAllIndices(mainIndex)
-      val vnodes = allIndices map indexToVNode
+      val allIndices = getAllIndices(mainIndex)
 
+      val vnodes: Seq[ActorRef] = allIndices map indexToVNode
+      this.sender ! LookupReply(vnodes)
+    }
+    case LookupAll => {
+      val vnodes: Seq[ActorRef] = indexToVNode.values.toSeq
       this.sender ! LookupReply(vnodes)
     }
   }

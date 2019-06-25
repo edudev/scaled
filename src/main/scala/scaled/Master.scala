@@ -10,9 +10,13 @@ object Master {
   def props[Key, Command, State](spec: Spec[Key, Command, State]): Props = Props(new Master(spec))
 
   def command[Key, Command, Acc](master: ActorRef, key: Key, command: Command, coordinator: Coordinator[Acc])(implicit sender: ActorRef): Unit =
-    master.tell(CommandM(key, command, coordinator), sender)
+    master.tell(CommandSingleKey(key, command, coordinator), sender)
 
-  final case class CommandM[Key, Command, Acc](key: Key, command: Command, coordinator: Coordinator[Acc])
+  def coverageCommand[Key, Command, Acc](master: ActorRef, key: Key, command: Command, coordinator: Coordinator[Acc])(implicit sender: ActorRef): Unit =
+    master.tell(CommandSingleKey(key, command, coordinator), sender)
+
+  final case class CommandSingleKey[Key, Command, Acc](key: Key, command: Command, coordinator: Coordinator[Acc])
+  final case class CommandCoverage[Command, Acc](command: Command, coordinator: Coordinator[Acc])
 }
 
 class Master[Key, Command, State](spec: Spec[Key, Command, State]) extends AkkaActor with ActorLogging {
@@ -27,8 +31,12 @@ class Master[Key, Command, State](spec: Spec[Key, Command, State]) extends AkkaA
   }
 
   private def initialized(vnodeMaster: ActorRef, coordinatorMaster: ActorRef): Receive = {
-    case CommandM(key, command, coordinator) => {
+    case CommandSingleKey(key, command, coordinator) => {
       CoordinatorMaster.command(coordinatorMaster, key, command, coordinator)(this.sender)
+    }
+
+    case CommandCoverage(command, coordinator) => {
+      CoordinatorMaster.coverageCommand(coordinatorMaster, command, coordinator)(this.sender)
     }
   }
 

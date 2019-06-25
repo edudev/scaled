@@ -10,6 +10,7 @@ import scaled.vnode.CommandNoReply
 import scaled.Spec
 
 import scaled.coordinator.Coordinator
+import scaled.coordinator.AccumulateContinue
 
 
 object KvVNode {
@@ -23,12 +24,21 @@ object KvVNode {
     def build = new KvVNode[V]
     val hashing = MurmurHash3.stringHashing
   }
+
+  val unionCoordinator = new Coordinator[Set[String]] {
+    def init = Set.empty
+    def accumulate(acc0: Set[String], reply: Any) = {
+      val replySet: Set[String] = reply.asInstanceOf[Set[String]]
+      AccumulateContinue(acc0 ++ replySet)
+    }
+    def finish(acc: Set[String]) = acc
+  }
 }
 
 import KvVNode._
 
 class KvVNode[V] extends VNode[Command, Map[String, V]] {
-  def init = Map.empty[String, V]
+  def init = Map.empty
 
   def handleCommand(sender: Sender, command: Command, state0: Map[String, V]) =
     command match {

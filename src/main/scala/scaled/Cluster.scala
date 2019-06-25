@@ -25,5 +25,8 @@ class Cluster[Key, Command, State] private (master: ActorRef) {
   def stop = master ! PoisonPill
 
   def command[Acc](key: Key, command: Command, coordinator: Coordinator[Acc])(implicit timeout: FiniteDuration): Future[Any] =
-    ask(master, Master.CommandM(key, command, coordinator))(Timeout(timeout)).mapTo[CoordinatorReply].map(_.reply)(parasitic)
+    ask(master, Master.CommandSingleKey(key, command, coordinator))(Timeout(timeout)).mapTo[CoordinatorReply].map(_.reply)(parasitic)
+
+  def coverageCommand[Acc](command: Command, coordinator: Coordinator[Acc])(implicit timeout: FiniteDuration): Future[Any] =
+    ask(master, Master.CommandCoverage(command, coordinator))(Timeout(timeout)).mapTo[CoordinatorReply].map(_.reply)(parasitic)
 }
