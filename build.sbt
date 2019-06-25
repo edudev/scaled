@@ -2,12 +2,12 @@ name := "scaled"
 
 version := "0.1"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.13.0"
 
 lazy val akkaVersion = "2.5.23"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.8" % "test"
 )
