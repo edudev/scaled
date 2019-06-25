@@ -30,7 +30,7 @@ class Actor[Command, State](vnode: VNode[Command, State]) extends AkkaActor with
 
     case c: $Command[Command] => {
       val command = c.command
-      val sender = Sender(this.sender)
+      val sender = Sender(this.sender, this.self)
 
       this.vnode.handle_command(sender, command, this.state) match {
         case CommandReply(reply, newState) => {

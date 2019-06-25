@@ -59,7 +59,7 @@ class MasterSpec(_system: ActorSystem)
 
       val coordinatorMaster = system.actorOf(Master.props(vnodeMaster))
 
-      Master.command(coordinatorMaster, "key 1", Get)(probe.ref)
+      Master.command(coordinatorMaster, "key 1", Get, MajorityCoordinator)(probe.ref)
       probe.expectMsg(CoordinatorReply(130))
     }
   }

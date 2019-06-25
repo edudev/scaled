@@ -7,14 +7,15 @@ import akka.actor.{ Actor => AkkaActor, ActorRef, Props, ActorLogging }
 import scaled.vnode.{ Master => VNodeMaster }
 import scaled.vnode.Builder
 import scaled.coordinator.{ Master => CoordinatorMaster }
+import scaled.coordinator.Coordinator
 
 object Master {
   def props[Key, Command, State](builder: Builder[Command, State])(implicit hashing: Hashing[Key]): Props = Props(new Master(builder)(hashing))
 
-  def command[Key, Command](master: ActorRef, key: Key, command: Command)(implicit sender: ActorRef): Unit =
-    master.tell(CommandM(key, command), sender)
+  def command[Key, Command, Acc](master: ActorRef, key: Key, command: Command, coordinator: Coordinator[Acc])(implicit sender: ActorRef): Unit =
+    master.tell(CommandM(key, command, coordinator), sender)
 
-  final case class CommandM[Key, Command](key: Key, command: Command)
+  final case class CommandM[Key, Command, Acc](key: Key, command: Command, coordinator: Coordinator[Acc])
 }
 
 class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Hashing[Key]) extends AkkaActor with ActorLogging {
@@ -29,8 +30,8 @@ class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Has
   }
 
   private def initialized(vnodeMaster: ActorRef, coordinatorMaster: ActorRef): Receive = {
-    case CommandM(key, command) => {
-      CoordinatorMaster.command(coordinatorMaster, key, command)(this.sender)
+    case CommandM(key, command, coordinator) => {
+      CoordinatorMaster.command(coordinatorMaster, key, command, coordinator)(this.sender)
     }
   }
 

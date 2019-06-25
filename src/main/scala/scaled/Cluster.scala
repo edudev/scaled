@@ -11,6 +11,7 @@ import akka.util.Timeout
 import akka.pattern.ask
 
 import scaled.vnode.Builder
+import scaled.coordinator.Coordinator
 import scaled.coordinator.Actor.CoordinatorReply
 
 object Cluster {
@@ -22,6 +23,6 @@ class Cluster[Key, Command, State] private (master: ActorRef) {
   private def this(builder: Builder[Command, State])(implicit hashing: Hashing[Key], system: ActorSystem) =
     this(system.actorOf(Master.props(builder)(hashing)))
 
-  def command(key: Key, command: Command)(timeout: FiniteDuration): Future[Any] =
-    ask(master, Master.CommandM(key, command))(Timeout(timeout)).mapTo[CoordinatorReply].map(_.reply)(parasitic)
+  def command[Acc](key: Key, command: Command, coordinator: Coordinator[Acc])(timeout: FiniteDuration): Future[Any] =
+    ask(master, Master.CommandM(key, command, coordinator))(Timeout(timeout)).mapTo[CoordinatorReply].map(_.reply)(parasitic)
 }

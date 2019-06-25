@@ -30,7 +30,7 @@ class MasterSpec(_system: ActorSystem)
       val probe = TestProbe()
       system.actorSelection(master.path / "*").tell(Identify(420), probe.ref)
 
-      val identities = (1 to Master.VNodeCount).map(_ => probe.expectMsgType[ActorIdentity])
+      val identities = (1 to Master.VNodeCount).map(_ => probe.expectMsgType[ActorIdentity](5.seconds))
 
       identities.size shouldBe Master.VNodeCount
 
@@ -45,12 +45,14 @@ class MasterSpec(_system: ActorSystem)
       val probe = TestProbe()
 
       Master.lookup(master, "key 1")(probe.ref)
-      val key1vnode = probe.expectMsgType[LookupReply]
+      val key1vnodes = probe.expectMsgType[LookupReply].vnodes
+      key1vnodes.size shouldBe 3
 
       Master.lookup(master, "key 2")(probe.ref)
-      val key2vnode = probe.expectMsgType[LookupReply]
+      val key2vnodes = probe.expectMsgType[LookupReply].vnodes
+      key2vnodes.size shouldBe 3
 
-      key1vnode.vnodes === key2vnode.vnodes shouldBe false
+      key1vnodes === key2vnodes shouldBe false
     }
   }
 }

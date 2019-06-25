@@ -2,8 +2,8 @@ package scaled.vnode
 
 import akka.actor.ActorRef
 
-case class Sender(private val ref: ActorRef) {
-  def send(reply: Any) = this.ref ! Actor.$CommandReply(reply)
+case class Sender(private val ref: ActorRef, private val vnode: ActorRef) {
+  def send(reply: Any) = this.ref.tell(Actor.$CommandReply(reply), vnode)
 }
 
 sealed trait CommandResponse[State]

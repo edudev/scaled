@@ -12,6 +12,8 @@ import akka.pattern.ask
 import scaled.vnode.{ Master => VNodeMaster }
 import scaled.vnode.{ Actor => VNodeActor }
 
+import scaled.coordinator.MajorityCoordinator
+
 import scaled.samples.CounterVNode
 
 class MasterSpec(_system: ActorSystem)
@@ -38,10 +40,10 @@ class MasterSpec(_system: ActorSystem)
 
       val probe = TestProbe()
 
-      Master.command(master, "key 1", Set(130))(probe.ref)
+      Master.command(master, "key 1", Set(130), MajorityCoordinator)(probe.ref)
       probe.expectMsg(CoordinatorReply(0))
 
-      Master.command(master, "key 1", Get)(probe.ref)
+      Master.command(master, "key 1", Get, MajorityCoordinator)(probe.ref)
       probe.expectMsg(CoordinatorReply(130))
     }
   }

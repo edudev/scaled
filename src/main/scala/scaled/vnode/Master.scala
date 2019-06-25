@@ -46,5 +46,5 @@ class Master[Key, Command, State](builder: Builder[Command, State])(hashing: Has
   private def wrap(index: Int): Int = index % Master.VNodeCount
 
   private def getAllIndices(mainIndex: Int): Seq[Int] =
-    mainIndex.to(mainIndex + replicationFactor).map(wrap)
+    mainIndex.to(mainIndex + replicationFactor - 1).map(wrap)
 }

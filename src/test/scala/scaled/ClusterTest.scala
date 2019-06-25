@@ -8,6 +8,8 @@ import org.scalatest.{AsyncFlatSpec, Matchers, BeforeAndAfterAll}
 
 import akka.actor.{ ActorSystem }
 
+import scaled.coordinator.MajorityCoordinator
+
 import scaled.samples.CounterVNode
 
 class ClusterSpec(system: ActorSystem)
@@ -30,10 +32,10 @@ class ClusterSpec(system: ActorSystem)
 
     val cluster = Cluster(CounterVNode.builder)(MurmurHash3.stringHashing, system)
 
-    cluster.command("key 1", Set(130))(5.seconds) flatMap { result =>
+    cluster.command("key 1", Set(130), MajorityCoordinator)(5.seconds) flatMap { result =>
       result shouldEqual 0
 
-      cluster.command("key 1", Get)(5.seconds) map { result =>
+      cluster.command("key 1", Get, MajorityCoordinator)(5.seconds) map { result =>
         result shouldEqual 130
       }
     }

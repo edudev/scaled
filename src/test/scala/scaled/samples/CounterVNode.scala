@@ -6,6 +6,8 @@ import scaled.vnode.Sender
 import scaled.vnode.CommandReply
 import scaled.vnode.CommandNoReply
 
+import scaled.coordinator.Coordinator
+
 
 object CounterVNode {
   sealed trait Command
